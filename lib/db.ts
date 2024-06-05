@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-export default async function connect() {
+export default async function dbConnect() {
     const connectionState = mongoose.connection.readyState;
 
     if (connectionState === 1) {
