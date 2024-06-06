@@ -14,14 +14,14 @@ const objectId = require("mongoose").Types.ObjectId;
  */
 export async function GET(request: NextRequest) {
     try {
-        await dbConnect(); // Connect to the database
+        // Connect to the database and Fetch all users.
+        await dbConnect(); //
+        const users = await User.find();
 
-        const users = await User.find(); // Fetch all users
-
-        // Return the users in the response with a status of 200
+        // Return the users.
         return new NextResponse(JSON.stringify(users), { status: 200 });
     } catch (error: any) {
-        // Return an error message in the response with a status of 500
+        // Failed to fetch users.
         return new NextResponse(
             JSON.stringify({
                 message: "Error in fetching users!",
@@ -41,14 +41,17 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
     try {
-        const body = await request.json(); // Parse the request body
+        // Parse the request body.
+        const body = await request.json();
 
-        await dbConnect(); // Connect to the database
+        // Connect to the database.
+        await dbConnect();
 
-        const newUser = new User(body); // Create a new user with the request body
-        await newUser.save(); // Save the new user to the database
+        // Create and save new user.
+        const newUser = new User(body);
+        await newUser.save();
 
-        // Return a success message in the response with a status of 201
+        // User successfully created.
         return new NextResponse(
             JSON.stringify({
                 message: "User is created!",
@@ -57,7 +60,7 @@ export async function POST(request: NextRequest) {
             { status: 201 }
         );
     } catch (error: any) {
-        // Return an error message in the response with a status of 500
+        // Failed to create user.
         return new NextResponse(
             JSON.stringify({
                 message: "Error in creating user!",
@@ -77,15 +80,14 @@ export async function POST(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
     try {
-        const userId = request.nextUrl.searchParams.get("id"); // Get the user id from the request parameters
+        // Get the user id from the request parameters.
+        const userId = request.nextUrl.searchParams.get("userId");
 
+        // Extract the new username from the request body.
         const body = await request.json();
+        const { username } = body;
 
-        const { username } = body; // Extract the new username from the request body
-
-        await dbConnect();
-
-        // Check if the user id or new username is not provided
+        // Check if the user id or new username is not provided.
         if (!userId || !username) {
             return new NextResponse(
                 JSON.stringify({
@@ -97,7 +99,7 @@ export async function PATCH(request: NextRequest) {
             );
         }
 
-        // Check if the user id is not a valid ObjectId
+        // Check if the user id is not a valid ObjectId.
         if (!Types.ObjectId.isValid(userId)) {
             return new NextResponse(
                 JSON.stringify({
@@ -109,14 +111,16 @@ export async function PATCH(request: NextRequest) {
             );
         }
 
-        // Update the user with the new username
+        // Connect and Update the user with the new username.
+        await dbConnect();
+
         const updatedUser = await User.findOneAndUpdate(
             { _id: new objectId(userId) },
             { username: username },
             { new: true }
         );
 
-        // Check if the user is not found
+        // Check if the user is not found.
         if (!updatedUser) {
             return new NextResponse(
                 JSON.stringify({
@@ -128,6 +132,7 @@ export async function PATCH(request: NextRequest) {
             );
         }
 
+        // User patched successfully.
         return new NextResponse(
             JSON.stringify({
                 message: "User is updated!",
@@ -138,6 +143,7 @@ export async function PATCH(request: NextRequest) {
             }
         );
     } catch (error: any) {
+        // Failed to patched the user.
         return new NextResponse(
             JSON.stringify({
                 message: "Error in updating user!",
@@ -158,28 +164,15 @@ export async function PATCH(request: NextRequest) {
  */
 export async function DELETE(request: Request) {
     try {
-        // Extract search parameters from the request URL
+        // Extract user id from the request URL.
         const { searchParams } = new URL(request.url);
-        // Get the user ID from the search parameters
-        const userId = searchParams.get("id");
+        const userId = searchParams.get("userId");
 
-        // If no user ID is provided, return a 404 status code with a message
-        if (!userId) {
+        // Check if user ID is valid,
+        if (!userId || !Types.ObjectId.isValid(userId)) {
             return new NextResponse(
                 JSON.stringify({
-                    message: "Id not found!",
-                }),
-                {
-                    status: 404,
-                }
-            );
-        }
-
-        // If the user ID is not valid, return a 400 status code with a message
-        if (!Types.ObjectId.isValid(userId)) {
-            return new NextResponse(
-                JSON.stringify({
-                    message: "Invalid user id",
+                    message: "Invalid or missing userId",
                 }),
                 {
                     status: 400,
@@ -189,12 +182,12 @@ export async function DELETE(request: Request) {
 
         await dbConnect();
 
-        // Delete the user from the database
+        // Delete the user from the database.
         const deletedUser = await User.findByIdAndDelete(
             new Types.ObjectId(userId)
         );
 
-        // If the user does not exist, return a 404 status code with a message
+        // If the user does not exist, return a 404 error.
         if (!deletedUser) {
             return new NextResponse(
                 JSON.stringify({
@@ -206,7 +199,7 @@ export async function DELETE(request: Request) {
             );
         }
 
-        // If the user is successfully deleted, return a 200 status code with a success message and the deleted user
+        // Uer is successfully deleted.
         return new NextResponse(
             JSON.stringify({
                 message: "User is deleted!",
@@ -217,7 +210,7 @@ export async function DELETE(request: Request) {
             }
         );
     } catch (error: any) {
-        // If there is an error in deleting the user, return a 500 status code with an error message
+        // If there is any error in deleting the user.
         return new NextResponse(
             JSON.stringify({
                 message: "Error in deleting user!",
