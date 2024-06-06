@@ -43,7 +43,9 @@ export async function GET(request: NextRequest) {
             user: new Types.ObjectId(userId),
         });
 
-        return new NextResponse(JSON.stringify(categories), { status: 200 });
+        return new NextResponse(JSON.stringify({ categories: categories }), {
+            status: 200,
+        });
     } catch (error: any) {
         // Failed to fetch categories.
         return new NextResponse(
@@ -102,12 +104,14 @@ export async function POST(request: NextRequest) {
 
         await newCategory.save();
 
-        return new NextResponse(JSON.stringify(newCategory), { status: 201 });
+        return new NextResponse(JSON.stringify({ category: newCategory }), {
+            status: 201,
+        });
     } catch (error: any) {
         // Failed to create new category.
         return new NextResponse(
             JSON.stringify({
-                message: "Failed to create new category!",
+                message: "Failed to create category!",
                 detail: error.message,
             }),
             {
