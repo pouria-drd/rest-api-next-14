@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
             );
         }
 
+        // Fined and return all categories of current user.
         const categories = await Category.find({
             user: new Types.ObjectId(userId),
         });
@@ -48,6 +49,65 @@ export async function GET(request: NextRequest) {
         return new NextResponse(
             JSON.stringify({
                 message: "Error in fetching categories!",
+                detail: error.message,
+            }),
+            {
+                status: 500,
+            }
+        );
+    }
+}
+export async function POST(request: NextRequest) {
+    try {
+        // Get the user id from the request parameters.
+        const userId = request.nextUrl.searchParams.get("userId");
+
+        // Check if user ID is valid.
+        if (!userId || !Types.ObjectId.isValid(userId)) {
+            return new NextResponse(
+                JSON.stringify({
+                    message: "Invalid or missing userId",
+                }),
+                {
+                    status: 400,
+                }
+            );
+        }
+
+        // Extract category data from request body.
+        const { title, description } = await request.json();
+
+        // Connect to database and find the user.
+        await dbConnect();
+        const user = await User.findById(userId);
+
+        // If the user does not exist, return 404 error.
+        if (!user) {
+            return new NextResponse(
+                JSON.stringify({
+                    message: "User not found!",
+                }),
+                {
+                    status: 404,
+                }
+            );
+        }
+
+        // Create new Category.
+        const newCategory = new Category({
+            title: title,
+            description: description,
+            user: new Types.ObjectId(userId),
+        });
+
+        await newCategory.save();
+
+        return new NextResponse(JSON.stringify(newCategory), { status: 201 });
+    } catch (error: any) {
+        // Failed to create new category.
+        return new NextResponse(
+            JSON.stringify({
+                message: "Failed to create new category!",
                 detail: error.message,
             }),
             {
