@@ -1,3 +1,5 @@
+import dbConnect from "@/lib/db";
+
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
@@ -24,6 +26,9 @@ export const isUserExists = async (userId: string) => {
         return false;
     }
 
+    // Connect to the database.
+    await dbConnect();
+
     // Dynamically import the User model and check if the user exists.
     const user = await (await import("@/models/user")).default.findById(userId);
 
@@ -48,6 +53,9 @@ export const isCategoryExits = async (categoryId: string, userId: string) => {
     if (!isValidObjectId(userId)) {
         return false;
     }
+
+    // Connect to the database.
+    await dbConnect();
 
     // Dynamically import the Category model and check if the category exists for the user.
     const category = await (

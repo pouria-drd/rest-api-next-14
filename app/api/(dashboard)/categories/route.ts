@@ -1,62 +1,39 @@
+import dbConnect from "@/lib/db";
+
 import { Types } from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
-
-import dbConnect from "@/lib/db";
-import User from "@/models/user";
-import Category from "@/models/category";
+import { handleError, isUserExists } from "@/utils/dbUtils";
 
 export async function GET(request: NextRequest) {
     try {
         // Get the user id from the request parameters.
         const userId = request.nextUrl.searchParams.get("userId");
 
-        // Check if user ID is valid.
-        if (!userId || !Types.ObjectId.isValid(userId)) {
-            return new NextResponse(
-                JSON.stringify({
-                    message: "Invalid or missing userId",
-                }),
-                {
-                    status: 400,
-                }
-            );
-        }
+        // User validation.
+        const isUser = await isUserExists(userId!);
 
-        // Try to stablish a connection to database and find user.
-        await dbConnect();
-        const user = await User.findById(userId);
-
-        // If the user does not exist, return 404 error.
-        if (!user) {
+        if (!isUser) {
             return new NextResponse(
                 JSON.stringify({
                     message: "User not found!",
                 }),
-                {
-                    status: 404,
-                }
+                { status: 404 }
             );
         }
 
         // Fined and return all categories of current user.
-        const categories = await Category.find({
-            user: new Types.ObjectId(userId),
+        await dbConnect();
+        const categories = await (
+            await import("@/models/category")
+        ).default.find({
+            user: new Types.ObjectId(userId!),
         });
 
         return new NextResponse(JSON.stringify({ categories: categories }), {
             status: 200,
         });
     } catch (error: any) {
-        // Failed to fetch categories.
-        return new NextResponse(
-            JSON.stringify({
-                message: "Error in fetching categories!",
-                detail: error.message,
-            }),
-            {
-                status: 500,
-            }
-        );
+        return handleError(error, "Error in fetching category!");
     }
 }
 export async function POST(request: NextRequest) {
@@ -64,42 +41,28 @@ export async function POST(request: NextRequest) {
         // Get the user id from the request parameters.
         const userId = request.nextUrl.searchParams.get("userId");
 
-        // Check if user ID is valid.
-        if (!userId || !Types.ObjectId.isValid(userId)) {
+        // User validation.
+        const isUser = await isUserExists(userId!);
+
+        if (!isUser) {
             return new NextResponse(
                 JSON.stringify({
-                    message: "Invalid or missing userId",
+                    message: "User not found!",
                 }),
-                {
-                    status: 400,
-                }
+                { status: 404 }
             );
         }
 
         // Extract category data from request body.
         const { title, description } = await request.json();
 
-        // Connect to database and find the user.
+        // Connect to database and Create new Category.
         await dbConnect();
-        const user = await User.findById(userId);
-
-        // If the user does not exist, return 404 error.
-        if (!user) {
-            return new NextResponse(
-                JSON.stringify({
-                    message: "User not found!",
-                }),
-                {
-                    status: 404,
-                }
-            );
-        }
-
-        // Create new Category.
+        const { default: Category } = await import("@/models/category");
         const newCategory = new Category({
             title: title,
             description: description,
-            user: new Types.ObjectId(userId),
+            user: new Types.ObjectId(userId!),
         });
 
         await newCategory.save();
@@ -108,15 +71,6 @@ export async function POST(request: NextRequest) {
             status: 201,
         });
     } catch (error: any) {
-        // Failed to create new category.
-        return new NextResponse(
-            JSON.stringify({
-                message: "Failed to create category!",
-                detail: error.message,
-            }),
-            {
-                status: 500,
-            }
-        );
+        return handleError(error, "Failed to create category!");
     }
 }

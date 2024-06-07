@@ -1,3 +1,5 @@
+import dbConnect from "@/lib/db";
+
 import { NextRequest, NextResponse } from "next/server";
 import { isUserExists, isCategoryExits, handleError } from "@/utils/dbUtils";
 
@@ -16,7 +18,7 @@ export async function PATCH(
         if (!isUser) {
             return new NextResponse(
                 JSON.stringify({
-                    message: "User with specified userId not found!",
+                    message: "User not found!",
                 }),
                 { status: 404 }
             );
@@ -37,7 +39,9 @@ export async function PATCH(
         // Extract category data from request body.
         const { title, description } = await request.json();
 
-        // Update category information.
+        // Connect to the database and Update the category information.
+        await dbConnect();
+
         const updatedCategory = await (
             await import("@/models/category")
         ).default.findByIdAndUpdate(
@@ -73,7 +77,7 @@ export async function DELETE(
         if (!isUser) {
             return new NextResponse(
                 JSON.stringify({
-                    message: "User with specified userId not found!",
+                    message: "User not found!",
                 }),
                 { status: 404 }
             );
@@ -91,7 +95,9 @@ export async function DELETE(
             );
         }
 
-        // Delete category in database.
+        // Connect to the database and Delete the category.
+        await dbConnect();
+
         await (
             await import("@/models/category")
         ).default.findByIdAndDelete(categoryId);
