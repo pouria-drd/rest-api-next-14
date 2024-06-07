@@ -1,78 +1,31 @@
-import { Types } from "mongoose";
-import { NextRequest, NextResponse } from "next/server";
-
-import dbConnect from "@/lib/db";
-import User from "@/models/user";
 import Category from "@/models/category";
 
-export async function PATCH(request: NextRequest, context: { params: any }) {
+import { NextRequest, NextResponse } from "next/server";
+import { handleError, validateAndFetchData } from "@/utils/dbUtils";
+
+export async function PATCH(
+    request: NextRequest,
+    context: { params: { categoryId: string } }
+) {
     try {
-        /// Get the category id from the dynamic url.
-        const categoryId = context.params.categoryId;
-
-        // Check if category ID is valid.
-        if (!categoryId || !Types.ObjectId.isValid(categoryId)) {
-            return new NextResponse(
-                JSON.stringify({
-                    message: "Invalid or missing categoryId",
-                }),
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        // Get the user id from the request parameters.
+        // Extract user and category ID.
+        const { categoryId } = context.params;
         const userId = request.nextUrl.searchParams.get("userId");
 
-        // Check if user ID is valid.
-        if (!userId || !Types.ObjectId.isValid(userId)) {
-            return new NextResponse(
-                JSON.stringify({
-                    message: "Invalid or missing userId",
-                }),
-                {
-                    status: 400,
-                }
-            );
-        }
+        // Validate and fetch user and category
+        const { error } = await validateAndFetchData(userId!, categoryId);
+        if (error) return error;
 
-        // Connect to db.
-        await dbConnect();
-
-        // Try to find user.
-        const user = await User.findById(userId);
-
-        // If the user does not exist, return 404 error.
-        if (!user) {
-            return new NextResponse(
-                JSON.stringify({
-                    message: "User not found!",
-                }),
-                {
-                    status: 404,
-                }
-            );
-        }
-
-        // Try to find correct category.
-        const category = Category.findOne({ _id: categoryId, user: userId });
-
-        // If the category does not exist, return 404 error.
-        if (!category) {
-            return new NextResponse(
-                JSON.stringify({
-                    message: "Category not found!",
-                }),
-                {
-                    status: 404,
-                }
-            );
-        }
-
-        // Extract category data from request body.
+        // Extract category data from request body
         const { title, description } = await request.json();
+        if (!title || !description) {
+            return new NextResponse(
+                JSON.stringify({ message: "Invalid input data" }),
+                { status: 400 }
+            );
+        }
 
+        // Update category in database
         const updatedCategory = await Category.findByIdAndUpdate(
             categoryId,
             { title, description },
@@ -82,111 +35,36 @@ export async function PATCH(request: NextRequest, context: { params: any }) {
         return new NextResponse(
             JSON.stringify({
                 message: "Category updated successfully!",
-                category: JSON.stringify(updatedCategory),
+                category: updatedCategory,
             }),
-            {
-                status: 200,
-            }
+            { status: 200 }
         );
     } catch (error: any) {
-        // Failed to update category.
-        return new NextResponse(
-            JSON.stringify({
-                message: "Error in updating category!",
-                detail: error.message,
-            }),
-            {
-                status: 500,
-            }
-        );
+        return handleError(error, "Error in updating category:");
     }
 }
 
-export async function DELETE(request: NextRequest, context: { params: any }) {
+export async function DELETE(
+    request: NextRequest,
+    context: { params: { categoryId: string } }
+) {
     try {
-        // Get the category id from the dynamic url.
-        const categoryId = context.params.categoryId;
-
-        // Check if category ID is valid.
-        if (!categoryId || !Types.ObjectId.isValid(categoryId)) {
-            return new NextResponse(
-                JSON.stringify({
-                    message: "Invalid or missing categoryId",
-                }),
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        // Get the user id from the request parameters.
+        // Extract user and category ID.
+        const { categoryId } = context.params;
         const userId = request.nextUrl.searchParams.get("userId");
 
-        // Check if user ID is valid.
-        if (!userId || !Types.ObjectId.isValid(userId)) {
-            return new NextResponse(
-                JSON.stringify({
-                    message: "Invalid or missing userId",
-                }),
-                {
-                    status: 400,
-                }
-            );
-        }
+        // Validate and fetch user and category
+        const { error } = await validateAndFetchData(userId!, categoryId);
+        if (error) return error;
 
-        // Connect to db.
-        await dbConnect();
-
-        // Try to find user.
-        const user = await User.findById(userId);
-
-        // If the user does not exist, return 404 error.
-        if (!user) {
-            return new NextResponse(
-                JSON.stringify({
-                    message: "User not found!",
-                }),
-                {
-                    status: 404,
-                }
-            );
-        }
-
-        // Try to find correct category.
-        const category = Category.findOne({ _id: categoryId, user: userId });
-
-        // If the category does not exist, return 404 error.
-        if (!category) {
-            return new NextResponse(
-                JSON.stringify({
-                    message: "Category not found!",
-                }),
-                {
-                    status: 404,
-                }
-            );
-        }
-
+        // Delete category in database
         await Category.findByIdAndDelete(categoryId);
 
         return new NextResponse(
-            JSON.stringify({
-                message: "Category id deleted!",
-            }),
-            {
-                status: 200,
-            }
+            JSON.stringify({ message: "Category deleted successfully!" }),
+            { status: 200 }
         );
     } catch (error: any) {
-        // Failed to delete category.
-        return new NextResponse(
-            JSON.stringify({
-                message: "Error in deleting category!",
-                detail: error.message,
-            }),
-            {
-                status: 500,
-            }
-        );
+        return handleError(error, "Error in deleting category:");
     }
 }
