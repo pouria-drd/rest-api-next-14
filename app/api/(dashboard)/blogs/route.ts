@@ -34,10 +34,10 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Fined and return all blogs of current user and category.
+        // Find and return all blogs of current user and category.
         const filter: any = {
             user: new Types.ObjectId(userId!),
-            categoryId: new Types.ObjectId(categoryId!),
+            category: new Types.ObjectId(categoryId!),
         };
 
         // Connect to database and fetch blogs.

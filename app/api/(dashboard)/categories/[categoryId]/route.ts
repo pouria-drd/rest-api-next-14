@@ -1,7 +1,7 @@
 import dbConnect from "@/lib/db";
 
 import { NextRequest, NextResponse } from "next/server";
-import { isUserExists, isCategoryExits, handleError } from "@/utils/dbUtils";
+import { isCategoryExits, handleError } from "@/utils/dbUtils";
 
 export async function PATCH(
     request: NextRequest,
@@ -11,18 +11,6 @@ export async function PATCH(
         // Extract user and category ID.
         const { categoryId } = context.params;
         const userId = request.nextUrl.searchParams.get("userId");
-
-        // User validation.
-        const isUser = await isUserExists(userId!);
-
-        if (!isUser) {
-            return new NextResponse(
-                JSON.stringify({
-                    message: "User not found!",
-                }),
-                { status: 404 }
-            );
-        }
 
         // Category validation.
         const isCategory = await isCategoryExits(categoryId, userId!);
@@ -70,18 +58,6 @@ export async function DELETE(
         // Extract user and category ID.
         const { categoryId } = context.params;
         const userId = request.nextUrl.searchParams.get("userId");
-
-        // User validation.
-        const isUser = await isUserExists(userId!);
-
-        if (!isUser) {
-            return new NextResponse(
-                JSON.stringify({
-                    message: "User not found!",
-                }),
-                { status: 404 }
-            );
-        }
 
         // Category validation.
         const isCategory = await isCategoryExits(categoryId, userId!);

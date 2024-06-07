@@ -46,11 +46,7 @@ export const isUserExists = async (userId: string) => {
  */
 export const isCategoryExits = async (categoryId: string, userId: string) => {
     // Validate the categoryId and userId formats.
-    if (!isValidObjectId(categoryId)) {
-        return false;
-    }
-
-    if (!isValidObjectId(userId)) {
+    if (!isValidObjectId(userId) || !isValidObjectId(categoryId)) {
         return false;
     }
 
@@ -63,6 +59,43 @@ export const isCategoryExits = async (categoryId: string, userId: string) => {
     ).default.findOne({ _id: categoryId, user: userId });
 
     if (!category) {
+        return false;
+    }
+
+    return true;
+};
+
+/**
+ * Checks if a blog with the given ID exists for the specified user and category in the database.
+ *
+ * @param userId - The ID of the user who owns the category.
+ * @param categoryId - The ID of the category who owns the blog.
+ * @param categoryId - The ID of the blog to be checked.
+ * @returns A boolean indicating whether the blog exists for the user and category.
+ */
+export const isBlogExits = async (
+    userId: string,
+    categoryId: string,
+    blogId: string
+) => {
+    // Validate the userId, categoryId and blogId formats.
+    if (
+        !isValidObjectId(userId) ||
+        !isValidObjectId(categoryId) ||
+        !isValidObjectId(blogId)
+    ) {
+        return false;
+    }
+
+    // Connect to the database.
+    await dbConnect();
+
+    // Dynamically import the Blog model and check if the blog exists for the user and category.
+    const blog = await (
+        await import("@/models/blog")
+    ).default.findOne({ _id: blogId, user: userId, category: categoryId });
+
+    if (!blog) {
         return false;
     }
 

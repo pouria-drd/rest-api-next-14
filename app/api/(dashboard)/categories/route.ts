@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Fined and return all categories of current user.
+        // Find and return all categories of current user.
         await dbConnect();
         const categories = await (
             await import("@/models/category")
