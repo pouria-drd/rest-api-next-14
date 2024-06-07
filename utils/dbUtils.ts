@@ -1,7 +1,4 @@
 import dbConnect from "@/lib/db";
-import User from "@/models/user";
-import Category from "@/models/category";
-
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
@@ -20,6 +17,8 @@ export const isValidObjectId = (id: string) => {
  * @returns A NextResponse with an error message and status if invalid, or an object containing the user data if valid.
  */
 export const fetchUserById = async (userId: string) => {
+    const User = (await import("@/models/user")).default; // Lazy load the User model
+
     // Validate the userId
     if (!isValidObjectId(userId)) {
         return new NextResponse(
@@ -50,6 +49,8 @@ export const fetchUserById = async (userId: string) => {
  * @returns A NextResponse with an error message and status if invalid, or an object containing the category data if valid.
  */
 export const fetchCategory = async (categoryId: string, userId: string) => {
+    const Category = (await import("@/models/category")).default; // Lazy load the Category model
+
     // Validate the categoryId
     if (!isValidObjectId(categoryId)) {
         return new NextResponse(

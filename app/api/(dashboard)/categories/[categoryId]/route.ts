@@ -1,7 +1,5 @@
-import Category from "@/models/category";
-
 import { NextRequest, NextResponse } from "next/server";
-import { handleError, validateAndFetchData } from "@/utils/dbUtils";
+import { validateAndFetchData, handleError } from "@/utils/dbUtils";
 
 export async function PATCH(
     request: NextRequest,
@@ -13,7 +11,10 @@ export async function PATCH(
         const userId = request.nextUrl.searchParams.get("userId");
 
         // Validate and fetch user and category
-        const { error } = await validateAndFetchData(userId!, categoryId);
+        const { user, category, error } = await validateAndFetchData(
+            userId!,
+            categoryId
+        );
         if (error) return error;
 
         // Extract category data from request body
@@ -26,7 +27,9 @@ export async function PATCH(
         }
 
         // Update category in database
-        const updatedCategory = await Category.findByIdAndUpdate(
+        const updatedCategory = await (
+            await import("@/models/category")
+        ).default.findByIdAndUpdate(
             categoryId,
             { title, description },
             { new: true }
@@ -54,11 +57,16 @@ export async function DELETE(
         const userId = request.nextUrl.searchParams.get("userId");
 
         // Validate and fetch user and category
-        const { error } = await validateAndFetchData(userId!, categoryId);
+        const { user, category, error } = await validateAndFetchData(
+            userId!,
+            categoryId
+        );
         if (error) return error;
 
         // Delete category in database
-        await Category.findByIdAndDelete(categoryId);
+        await (
+            await import("@/models/category")
+        ).default.findByIdAndDelete(categoryId);
 
         return new NextResponse(
             JSON.stringify({ message: "Category deleted successfully!" }),
