@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateAndFetchData, handleError } from "@/utils/dbUtils";
+import { isUserExists, isCategoryExits, handleError } from "@/utils/dbUtils";
 
 export async function PATCH(
     request: NextRequest,
@@ -10,23 +10,34 @@ export async function PATCH(
         const { categoryId } = context.params;
         const userId = request.nextUrl.searchParams.get("userId");
 
-        // Validate and fetch user and category
-        const { user, category, error } = await validateAndFetchData(
-            userId!,
-            categoryId
-        );
-        if (error) return error;
+        // User validation.
+        const isUser = await isUserExists(userId!);
 
-        // Extract category data from request body
-        const { title, description } = await request.json();
-        if (!title || !description) {
+        if (!isUser) {
             return new NextResponse(
-                JSON.stringify({ message: "Invalid input data" }),
-                { status: 400 }
+                JSON.stringify({
+                    message: "User with specified userId not found!",
+                }),
+                { status: 404 }
             );
         }
 
-        // Update category in database
+        // Category validation.
+        const isCategory = await isCategoryExits(categoryId, userId!);
+
+        if (!isCategory) {
+            return new NextResponse(
+                JSON.stringify({
+                    message: "Category not found!",
+                }),
+                { status: 404 }
+            );
+        }
+
+        // Extract category data from request body.
+        const { title, description } = await request.json();
+
+        // Update category information.
         const updatedCategory = await (
             await import("@/models/category")
         ).default.findByIdAndUpdate(
@@ -43,7 +54,7 @@ export async function PATCH(
             { status: 200 }
         );
     } catch (error: any) {
-        return handleError(error, "Error in updating category:");
+        return handleError(error, "Error in updating category!");
     }
 }
 
@@ -56,14 +67,31 @@ export async function DELETE(
         const { categoryId } = context.params;
         const userId = request.nextUrl.searchParams.get("userId");
 
-        // Validate and fetch user and category
-        const { user, category, error } = await validateAndFetchData(
-            userId!,
-            categoryId
-        );
-        if (error) return error;
+        // User validation.
+        const isUser = await isUserExists(userId!);
 
-        // Delete category in database
+        if (!isUser) {
+            return new NextResponse(
+                JSON.stringify({
+                    message: "User with specified userId not found!",
+                }),
+                { status: 404 }
+            );
+        }
+
+        // Category validation.
+        const isCategory = await isCategoryExits(categoryId, userId!);
+
+        if (!isCategory) {
+            return new NextResponse(
+                JSON.stringify({
+                    message: "Category not found!",
+                }),
+                { status: 404 }
+            );
+        }
+
+        // Delete category in database.
         await (
             await import("@/models/category")
         ).default.findByIdAndDelete(categoryId);

@@ -1,100 +1,78 @@
-import dbConnect from "@/lib/db";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
 /**
- * Checks if the provided string is a valid ObjectId.
- * @param id - The string to check.
- * @returns A boolean indicating whether the provided string is a valid ObjectId.
+ * Checks if a given string is a valid MongoDB ObjectId.
+ *
+ * @param id - The string to be checked.
+ * @returns A boolean indicating whether the string is a valid ObjectId.
  */
 export const isValidObjectId = (id: string) => {
-    return id && Types.ObjectId.isValid(id);
+    const isValid = id && Types.ObjectId.isValid(id);
+    return isValid;
 };
 
 /**
- * Fetches a user by their ID.
- * @param userId - The ID of the user to fetch.
- * @returns A NextResponse with an error message and status if invalid, or an object containing the user data if valid.
+ * Checks if a user with the given ID exists in the database.
+ *
+ * @param userId - The ID of the user to be checked.
+ * @returns A boolean indicating whether the user exists.
  */
-export const fetchUserById = async (userId: string) => {
-    const User = (await import("@/models/user")).default; // Lazy load the User model
-
-    // Validate the userId
+export const isUserExists = async (userId: string) => {
+    // Validate the userId format.
     if (!isValidObjectId(userId)) {
-        return new NextResponse(
-            JSON.stringify({ message: "Invalid or missing userId!" }),
-            { status: 400 }
-        );
+        return false;
     }
 
-    // Fetch the user from the database.
-    const user = await User.findById(userId);
-    if (!user) {
-        return new NextResponse(
-            JSON.stringify({ message: "User not found!" }),
-            {
-                status: 404,
-            }
-        );
-    }
+    // Dynamically import the User model and check if the user exists.
+    const user = await (await import("@/models/user")).default.findById(userId);
 
-    // Return the user data.
-    return { user };
+    if (!user) return false;
+
+    return true;
 };
 
 /**
- * Fetches a category by its ID and the user ID.
- * @param categoryId - The ID of the category to fetch.
+ * Checks if a category with the given ID exists for the specified user in the database.
+ *
+ * @param categoryId - The ID of the category to be checked.
  * @param userId - The ID of the user who owns the category.
- * @returns A NextResponse with an error message and status if invalid, or an object containing the category data if valid.
+ * @returns A boolean indicating whether the category exists for the user.
  */
-export const fetchCategory = async (categoryId: string, userId: string) => {
-    const Category = (await import("@/models/category")).default; // Lazy load the Category model
-
-    // Validate the categoryId
+export const isCategoryExits = async (categoryId: string, userId: string) => {
+    // Validate the categoryId and userId formats.
     if (!isValidObjectId(categoryId)) {
-        return new NextResponse(
-            JSON.stringify({ message: "Invalid or missing categoryId!" }),
-            { status: 400 }
-        );
+        return false;
     }
 
-    // Fetch the category from the database.
-    const category = await Category.findOne({ _id: categoryId, user: userId });
+    if (!isValidObjectId(userId)) {
+        return false;
+    }
+
+    // Dynamically import the Category model and check if the category exists for the user.
+    const category = await (
+        await import("@/models/category")
+    ).default.findOne({ _id: categoryId, user: userId });
+
     if (!category) {
-        return new NextResponse(
-            JSON.stringify({ message: "Category not found!" }),
-            { status: 404 }
-        );
+        return false;
     }
 
-    // Return the category data.
-    return { category };
+    return true;
 };
 
-export const validateAndFetchData = async (
-    userId: string,
-    categoryId: string
-) => {
-    // Connect to the database
-    await dbConnect();
-
-    // Validate and fetch user and category
-    const userResponse = await fetchUserById(userId);
-    if (userResponse instanceof NextResponse) return { error: userResponse };
-
-    const categoryResponse = await fetchCategory(categoryId, userId);
-    if (categoryResponse instanceof NextResponse)
-        return { error: categoryResponse };
-
-    return { user: userResponse.user, category: categoryResponse.category };
-};
-
+/**
+ * Handles errors by logging them and returning a standardized error response.
+ *
+ * @param error - The error object.
+ * @param message - An optional custom error message.
+ * @returns A NextResponse object with a JSON error message and a 500 status code.
+ */
 export const handleError = (error: any, message: string) => {
     console.error(message, error);
     return new NextResponse(
         JSON.stringify({
-            message: error.message || message,
+            message: message || error.message,
         }),
         { status: 500 }
     );
