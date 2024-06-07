@@ -67,9 +67,15 @@ export async function POST(request: NextRequest) {
 
         await newCategory.save();
 
-        return new NextResponse(JSON.stringify({ category: newCategory }), {
-            status: 201,
-        });
+        return new NextResponse(
+            JSON.stringify({
+                message: "Category created successfully!",
+                category: newCategory,
+            }),
+            {
+                status: 201,
+            }
+        );
     } catch (error: any) {
         return handleError(error, "Failed to create category!");
     }
