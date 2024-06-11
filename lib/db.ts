@@ -6,12 +6,12 @@ export default async function dbConnect() {
     const connectionState = mongoose.connection.readyState;
 
     if (connectionState === 1) {
-        console.log("Already connected!");
+        console.log("Already connected to db!");
         return;
     }
 
     if (connectionState === 2) {
-        console.log("Connecting ...");
+        console.log("Connecting to db...");
         return;
     }
 
@@ -21,7 +21,7 @@ export default async function dbConnect() {
             bufferCommands: true,
         });
 
-        console.log("Connected");
+        console.log("Connected to db!");
     } catch (error: any) {
         console.log("Error :", error);
         throw new Error("Error :", error);
