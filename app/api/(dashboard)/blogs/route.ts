@@ -10,6 +10,10 @@ export async function GET(request: NextRequest) {
         const userId = request.nextUrl.searchParams.get("userId");
         const categoryId = request.nextUrl.searchParams.get("categoryId");
 
+        const searchKeywords = request.nextUrl.searchParams.get(
+            "keywords"
+        ) as string;
+
         // User validation.
         const isUser = await isUserExists(userId!);
 
@@ -39,6 +43,18 @@ export async function GET(request: NextRequest) {
             user: new Types.ObjectId(userId!),
             category: new Types.ObjectId(categoryId!),
         };
+
+        // Add filters if there are any searchKeywords.
+        if (searchKeywords) {
+            filter.$or = [
+                {
+                    title: { $regex: searchKeywords, $options: "i" },
+                },
+                {
+                    description: { $regex: searchKeywords, $options: "i" },
+                },
+            ];
+        }
 
         // Connect to database and fetch blogs.
         await dbConnect();
