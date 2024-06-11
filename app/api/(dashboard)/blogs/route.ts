@@ -10,6 +10,15 @@ export async function GET(request: NextRequest) {
         const userId = request.nextUrl.searchParams.get("userId");
         const categoryId = request.nextUrl.searchParams.get("categoryId");
 
+        // Filters
+        const page = parseInt(request.nextUrl.searchParams.get("page") || "1");
+        const limit = parseInt(
+            request.nextUrl.searchParams.get("limit") || "10"
+        );
+
+        const startDate = request.nextUrl.searchParams.get("startDate");
+        const endDate = request.nextUrl.searchParams.get("endDate");
+
         const searchKeywords = request.nextUrl.searchParams.get(
             "keywords"
         ) as string;
@@ -44,7 +53,7 @@ export async function GET(request: NextRequest) {
             category: new Types.ObjectId(categoryId!),
         };
 
-        // Add filters if there are any searchKeywords.
+        // Filters for title and description.
         if (searchKeywords) {
             filter.$or = [
                 {
@@ -56,12 +65,32 @@ export async function GET(request: NextRequest) {
             ];
         }
 
+        // Filters based on dates.
+        if (startDate && endDate) {
+            filter.createdAt = {
+                $gte: new Date(startDate),
+                $lte: new Date(endDate),
+            };
+        } else if (startDate) {
+            filter.createdAt = {
+                $gte: new Date(startDate),
+            };
+        } else if (endDate) {
+            filter.createdAt = {
+                $lte: new Date(endDate),
+            };
+        }
+
+        const skip = (page - 1) * limit;
+
         // Connect to database and fetch blogs.
         await dbConnect();
 
-        const blogs = await (
-            await import("@/models/blog")
-        ).default.find(filter);
+        const blogs = await (await import("@/models/blog")).default
+            .find(filter)
+            .sort({ createdAt: "desc" })
+            .skip(skip)
+            .limit(limit);
 
         return new NextResponse(JSON.stringify({ blogs: blogs }), {
             status: 200,
